@@ -120,3 +120,26 @@ ggplot(df6, aes(x = dep_delay, y=arr_delay)) +
 This visualization adds a line of best fit to show that there is a positive correlation between Departure Time
 and Arrival Time. This shows us that generally, the longer the departure time is in minutes, the longer the arrival delay would be. This intuitively makes sense, since if you leave after you plan to, you will arrive later than you plan to, as the travel time of the flight is not effected by the departure time. It does not matter whether you leave at 1:00 pm or 1:40 pm, the duration of the flight will stay relatively consistent no matter what time you depart.   
 
+# Which NYC airport had the most traffic in 2013?
+
+```{r}
+df7 = df1 |>
+  select(origin, dest)|>
+  group_by(origin) |>
+  summarise(n = n())
+```
+
+# Bar Chart of number of flights
+
+```{r}
+df7 |>
+  ggplot(aes(x = origin, y = n)) + geom_col() + labs(x = "Airport", y = "Number of Flights Out", title = "Flights out of NYC Airports in 2013") 
+```
+
+```{r}
+df8 = df1 |>
+  select(origin, dest)|>
+  group_by(dest) |>
+  summarise(n = n())
+```
+
