@@ -1,0 +1,78 @@
+---
+title: "Baby Names"
+---
+
+# Packages + Data
+```{r}
+library(tidyverse)
+library(babynames)
+```
+# Load Data Frame
+```{r}
+df1 <- babynames
+```
+
+# Seperate Males and Females
+
+```{r}
+
+df_f = df1  |>
+  filter(sex == "F")
+
+
+df_m = df1  |>
+  filter(sex == "M")
+```
+
+
+# What is the most popular Female name?
+
+```{r}
+fmax = max(df_f$prop)
+
+mmax = max(df_m$prop)
+
+df_f  |>
+  filter(prop == fmax)
+
+
+df_m  |>
+  filter(prop == mmax)
+```
+# Mary Popularity over time
+
+```{r}
+df_mary = df_f |>
+  filter(name == "Mary")
+```
+
+# Plot of Mary Popularity
+```{r}
+df_mary |>
+  ggplot(aes(x = year, y = prop)) + geom_col()
+```
+From the graph, we can see that the name Mary overall follows a downward trend
+
+#
+```{r}
+df_2 = df_f |>
+  filter(year >= 2000)
+
+f2max = max(df_f2$prop)
+
+df_2 = df_f |>
+  filter(prop == f2max)
+
+```
+
+```{r}
+df_2 |>
+  filter(name == "Emily") |>
+  ggplot(aes(x = year, y = prop)) + geom_col()
+
+```
+
+```{r}
+
+```
+

@@ -1,0 +1,27 @@
+---
+title: "CS142 Enrollment"
+output: html_notebook
+---
+
+
+# Packages
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(here)
+```
+
+# Load Data
+
+```{r}
+df1 <- read.csv((here("data_raw", "CU_ACAD_DEPT_WHEN_OFF_ENRL.csv"))) |> clean_names()
+```
+
+# Select Relevant Data 
+
+```{r} 
+df2 = df1 |>
+  pivot_wider(names_from = "subject", values_from = "section")
+```
+

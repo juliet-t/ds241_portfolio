@@ -1,0 +1,101 @@
+---
+title: "Has the inital age of people in the Korean Music decrased over time?"
+Date: 2023-10-01
+output: html_notebook
+---
+
+A common observation among fans of Korean pop music is that the the musicians, also refered to as "idols", are being "debuted" or beginning their music career younger than ever before. We can find the average age of the kpop idols through knowing the birthdays of these idols over decades. 
+
+Data set taken from https://www.kaggle.com/datasets/onlyrohit/all-kpop-idols.
+
+# Packages 
+
+```{r}
+library(tidyverse)
+library(tidyr)
+library(janitor)
+library(here)
+library(dplyr)
+library(lubridate)
+```
+
+# Import Data 
+
+Since the data set itself was not recorded in the exact way that is necessary for this analysis, some changes to the data set were needed.
+
+Updates to the original data set. 
+* Took out group GIDONDAE because they never became an actual group. 
+* Changed all of KARD's debut date from Sept. 3rd, 2007 to July 29. 2017
+* Change Lee Junyoun from U-Kiss's debut date year from 2008 to July, 2014
+* Changed HOT ISSUES' debut date from May 17, 2017 to April 28th, 2021
+* Deleted Yoon Jia from Midas Company
+
+```{r}
+thisfile <- here("data", "kpopidolsv3_updated.csv")
+
+rawdata <- read.csv(thisfile) |> clean_names()
+```
+
+For the sake of our analysis, we will temporarily remove the columns, korean_name, K_stage_name, height, weight, birthplace, and instagram for relevance sake. We will name this data frame df_ages, because we will do analysis regarding the kpop idol's age with this data frame. 
+
+```{r}
+df_ages <- rawdata |>
+ 
+  select(full_name, date_of_birth, group, debut, gender)
+
+
+```
+
+We will then separate the debut dates into three different columns, and the birth dates into three different columns. 
+```{r}
+
+df_ages1 <- df_ages |>
+  mutate(date_of_birth = as.Date(date_of_birth, tryFormats = c("%d/%m/%Y"))) |>
+  mutate(date_of_birth = ymd(date_of_birth))|>
+  mutate(debut = as.Date(debut, tryFormats = c("%d/%m/%Y"))) |>
+  mutate(debut = ymd(debut)) |>
+  drop_na(debut | date_of_birth) |> 
+  subset(debut > date_of_birth) |>
+  mutate(debut_age_years = time_length(difftime(debut, date_of_birth), "years")) |>
+  mutate(debut_decade = floor(as.numeric(debut-as.Date("2000/01/01"))/365/10)*10)
+```
+# Plot of Debut to Age (in Years)
+```{r}
+ggplot(df_ages1, aes(debut, debut_age_years)) + geom_point(aes(color = debut_age_years))  + labs( x = "Debut (yr)", y =  "Age at Debut (yr)", title = "Debut to Age" )
+ggplot(df_ages1, aes(debut_age_years,group=debut_decade)) +geom_boxplot() + labs( x = "Age at Debut (yr)", y =  "Age at Debut (yr)", title = "Debut to Age" )
+
+```
+
+```{r}
+debut1900s <- df_ages1 |> 
+  filter(debut_decade %in% -10)
+
+debut2000 <- df_ages1 |> 
+  filter(debut_decade %in% 0)
+
+
+debut2010 <- df_ages1 |> 
+  filter(debut_decade %in% 10)
+
+
+debut2020 <- df_ages1 |> 
+  filter(debut_decade %in% 20)
+
+```
+
+```{r}
+print("1900:")
+summary(debut1900s$debut_age_years)
+print("2000:")
+summary(debut2000$debut_age_years)
+print("2010:")
+summary(debut2010$debut_age_years)
+print("2020:")
+summary(debut2020$debut_age_years)
+
+```
+
+
+* TO-DO
+* Get more data on groups debuted from 1900- 2010.
+* Fix dates of - debut_age_years / really low values
