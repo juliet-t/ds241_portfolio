@@ -41,7 +41,7 @@ df3
 There were 912 flights going to Miami from a New York City airport in September 2013.
 
 
-Task 4: Flights in January going to Miami 
+Flights in January going to Miami 
 ```{r}
 df4 <- df1 |>
   filter(month == 1 & dest == "MIA")
@@ -50,8 +50,7 @@ df4
 ```
 There were 981 flights going to Miami in the month of January. 
 
-
-Task 5: Flights in summer going to Chicago
+ Flights in summer going to Chicago
 
 There are two major airports in Chicago included in this data set as destination airports. Below is the airport name and its IATA code. This information was taken from https://www.cleartrip.com/tourism/airports/chicago-airport.html,
 
@@ -135,11 +134,47 @@ df7 = df1 |>
 df7 |>
   ggplot(aes(x = origin, y = n)) + geom_col() + labs(x = "Airport", y = "Number of Flights Out", title = "Flights out of NYC Airports in 2013") 
 ```
+From this chart, we can see that EWR had the most flights out in 2013. 
+
+# What was the top airline for each NYC airport in 2013?
+
+Filtering for JFK 
 
 ```{r}
 df8 = df1 |>
-  select(origin, dest)|>
-  group_by(dest) |>
+  select(origin, dest) |>
+  group_by(origin, dest) |>
+  filter(origin == "JFK") |>
   summarise(n = n())
+
+
+  ggplot(df8, aes(x = dest, y = n) ) + geom_col(aes(fill = origin)) +theme(axis.text.x = element_text(angle = 90, vjust = .1, hjust = 1), axis.text = element_text(size = 6))
 ```
+From this graph, we can see LAX was the most popular place for JFK flights. 
+
+Filtering for EWR
+
+```{r}
+df8 = df1 |>
+  select(origin, dest) |>
+  group_by(origin, dest) |>
+  filter(origin == "EWR") |>
+  summarise(n = n())
+
+
+  ggplot(df8, aes(x = dest, y = n) ) + geom_col(aes(fill = origin)) +theme(axis.text.x = element_text(angle = 90, vjust = .1, hjust = 1), axis.text = element_text(size = 6))
+```
+From this graph, we can see ORD was the most popular place for EWR flights. 
+
+```{r}
+df8 = df1 |>
+  select(origin, dest) |>
+  group_by(origin, dest) |>
+  filter(origin == "LGA") |>
+  summarise(n = n())
+
+
+  ggplot(df8, aes(x = dest, y = n) ) + geom_col(aes(fill = origin)) +theme(axis.text.x = element_text(angle = 90, vjust = .1, hjust = 1), axis.text = element_text(size = 6))
+```
+From this graph, we can see ATL was the most popular place for LGA flights. 
 
