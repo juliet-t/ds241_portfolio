@@ -1,0 +1,185 @@
+---
+title: "MA 132 SP23 Enrollment Prediction"
+Subtitle: "Juliet Thistleton, Jesse Dykes, Jasson Ofosu-Mensah"
+date: "2023-10-05"
+output: html_notebook
+---
+
+
+Import Relevant libraries
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+library(stringr)
+library(skimr)
+library(scales)
+
+```
+Import data set 
+```{r}
+thisfile <- here("data_raw", "CU_ACAD_DEPT_WHEN_OFF_ENRL.csv")
+
+df1 <- read_csv(thisfile) |> clean_names()
+```
+
+Filter only MA 132
+```{r}
+df_calc <- df1 |>
+  filter(subject == "MA" & (catalog == "132" | catalog == "131") & component == "LEC")
+
+```
+
+Remove the columns that are not relevant. 
+```{r}
+df3 <- df_calc |>
+  select(-acad_org, -current_status, -subject, -course_id, -section, -title, -component, -instructor) 
+  
+
+
+```
+
+
+Deleting current irrelevant columns and getting the total amount of students for MA132 in each semester. 
+```{r}
+df4 <- df_calc |>
+  select(-acad_org, -current_status, -subject, -course_id, -section, -title, -component, -instructor) |>
+  group_by(catalog, term_7, term_8, tot_enrl) |>
+  summarise(tot_enrl = sum(tot_enrl)) |>
+  mutate(cum_enrl = cumsum(tot_enrl))
+```
+Filtering only MA 131 and MA 132 and putting them into their own data frames, respectively. 
+```{r}
+df131 <- df4 |>
+  filter(catalog == 131)
+
+df132 <- df4 |> 
+  filter(catalog == 132)
+```
+
+
+This data frame contains only the number of sections for each semester. 
+```{r}
+ df132_spring <- df132 |>
+  filter(str_detect(term_8, c("Spring")))  |>
+  filter(!(term_8 == "Spring 2024"))
+
+df132_sections <- df132_spring |>
+  filter(catalog == 132) |>
+  filter(str_detect(term_8, c("Spring"))) |> 
+  count(term_8, sort = FALSE) |>
+  filter(!(term_8 == "Spring 2024"))
+
+
+
+ggplot(df132_sections, aes(x = fct_inorder(term_8), y = n, fill = term_8)) + geom_col() + theme(axis.text.x = (element_text(angle = 90))) + labs(title = "Number of Sections for MA 132 by Semester") + xlab("Semester") + ylab("Sections") + scale_fill_discrete(name = "Semester") + scale_y_continuous(breaks = pretty_breaks(), limits = c(0,10))
+
+summary(df132_sections)  
+
+```
+Here we see a bar chart of the number sections per semester. The average amount of sections offered is 6. 
+
+
+This data frame contains only the spring semester MA 132 sections and their total students enrolled, respectively. 
+```{r}
+df132_spring <- df132 |>
+  filter(str_detect(term_8, c("Spring")))  |>
+  filter(!(term_8 == "Spring 2024")) |> 
+  summarise(cum_sum = sum(tot_enrl))
+
+ggplot(df132_spring, aes(x = fct_inorder(term_8), y = cum_sum, fill = term_8)) + geom_col() + theme(axis.text.x = (element_text(angle = 90))) + labs(title = "Number of Students enrolled in MA 132 by Semester") + xlab("Semester") + ylab("Total Enrolled") + scale_fill_discrete(name = "Semester")
+```
+
+
+
+
+This brings up a statistical summary of the columns in df132. 
+```{r}
+summary(df132_spring)
+```
+From the summary, we can see that the median amount of people who are in a section of MA 132 is 63, while the median is 65.70. 
+
+
+Here, we will take make a data frame of just Fall  MA 131 to find the total enrollment for each semester 
+```{r}
+ df131_fall <- df131 |>
+  filter(str_detect(term_8, c("Fall")))  |>
+  filter(!(term_8 == "Fall 2024")) |>
+  summarise(cum_sum = sum(tot_enrl))
+
+```
+This is a bar chart of the total enrollment in MA 131 by Semester
+```{r}
+ggplot(df131_fall, aes(x = fct_inorder(term_8), y = cum_sum, fill = term_8)) + geom_col() + theme(axis.text.x = (element_text(angle = 90))) + labs(title = "Number of Students enrolled in MA 131 by Semester") + xlab("Semester") + ylab("Total Enrolled") + scale_fill_discrete(name = "Semester")
+```
+
+Modifying the code used in the asynchronous lecture, we can find the difference between Spring MA132 enrollment and the Fall 131 enrollment added together with the Fall 132.
+
+```{r}
+dfVideo1 <- df1 |> 
+  filter(subject=="MA") |>
+  select(-acad_org,-current_status,-course_id,-title) |>
+  filter(component=="LEC", catalog %in% c(131,132) ) |>
+  mutate(catalog=as.character(catalog)) |>
+ separate_wider_delim(term_8," ",names = c("semester", "yr"))|>
+  filter(!(semester=="Summer")) |>
+  select(-subject) |>
+  mutate(ay=((term_7-4000)/10) |> round()) |> # this will denote the academic year 
+  select(-term_7,-yr,-component)|>
+  slice_head(n=1,by=c("catalog","section","semester","ay")) |> # Gets ride of any duplicate instructors for the same semester to decreased adding in students twice 
+  select(-instructor) |>
+  summarise(tot_enrl = sum(tot_enrl), .by=c("catalog","semester","ay")) |>
+  pivot_wider(id_cols = ay,names_from = c("semester","catalog"),values_from = tot_enrl) |>
+  clean_names() |>
+  select(-spring_131) |>
+  filter(!row_number() %in% 10) |>
+  mutate(diff = spring_132 - fall_131 - fall_132) |>
+  select(-ay, -fall_131, -fall_132, -spring_132) 
+
+```
+
+We then can see a statistical summary of the differences between the Spring and Fall of the same academic year.
+```{r}
+summary(dfVideo1)
+```
+
+
+ Taking the median or mean, you can subtract that from the total enrollment of the current MA131. 
+ 
+```{r}
+mean <- -249.3
+median <- -252
+current131 <- 523
+
+predicted_mean <- current131 + mean
+predicted_median <- current131 + median
+paste("Predicted amount of students using the mean:", predicted_mean)
+paste("Predicted amount of students using the median:", predicted_median)
+```
+We will then plot spring 132 enrollment as a function of fall enrollment.
+```{r}
+dfVideo2 <- df1 |> 
+  filter(subject=="MA") |>
+  select(-acad_org,-current_status,-course_id,-title) |>
+  filter(component=="LEC", catalog %in% c(131,132) ) |>
+  mutate(catalog=as.character(catalog)) |>
+  separate_wider_delim(term_8," ",names = c("semester", "yr")) |>
+  filter(!(semester=="Summer")) |>
+  select(-subject) |>
+  mutate(ay=((term_7-4000)/10) |> round()) |>
+  select(-term_7,-yr,-component) |>
+  slice_head(n=1,by=c("catalog","section","semester","ay"))|>
+  select(-instructor) |>
+  summarise(tot_enrl = sum(tot_enrl), .by=c("catalog","semester","ay")) |>
+  pivot_wider(id_cols = ay,names_from = c("semester","catalog"),values_from = tot_enrl) |>
+  clean_names() |>
+  select(-spring_131) |>
+  filter(!row_number() %in% 10) |>
+  mutate(fall_enrl = fall_131 +fall_132)
+ggplot(dfVideo2, aes(x = fall_enrl, y = spring_132)) + 
+  geom_point() + geom_smooth(method = lm, se = FALSE) + labs(title = "MA 132 Spring Enrollment Predicted by MA 131 Fall Enrollment", x = "MA 131 Fall", y = "MA 132 Spring")
+```
+```{r}
+lm <- lm(dfVideo2, spring132 ~fall_enrl)
+```
+

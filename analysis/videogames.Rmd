@@ -1,0 +1,64 @@
+---
+title: "Visualizations with ggplot"
+Author: "Juliet Thistleton"
+output: html_notebook
+---
+
+Using the ggplot package, We will explore a data set that keeps track of the name of the video game released, the platofrom it was released onm the release date, a summary of the game, and the User review rating of the game. 
+
+This data set was taken from https://www.kaggle.com/datasets/maso0dahmed/video-games-data.
+
+# Required Packages 
+```{r}
+library(tidyverse) 
+library(janitor)
+library(here)
+library(lubridate)
+```
+# Defining helpful variables
+```{r}
+rotate = theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust= 1))
+```
+
+
+
+# Import the data 
+```{r}
+df1 = read.csv(here("data_raw", "video_games.csv")) |> clean_names()
+```
+
+
+# Question 1: Which video game console had the most games released for it beteween April 1, 2001, and Sepetember 9, 2021 according to this data set?
+
+```{r}
+df2 = df1 |> 
+  select(-summary) |>
+  group_by(platform) |>
+  count()
+
+```
+
+## Making a visualization to see the console with the most releases
+```{r}
+ggplot(df2, (aes(x = platform, y = n))) + geom_col() + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust= 1))
+```
+From this graph, we can see that the PC has had the most releases of all the platform included in this data set. 
+
+# Question 2: What is the average review score for each console's games released?
+
+## Coercing user_revew from character to int
+```{r}
+df3 = df1 |>
+  group_by(user_review) |>
+  count()
+
+
+ggplot(df3, aes(user_review, n)) + geom_col() + theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust= 1))
+```
+
+
+```{r}
+aggregate(df3$user_review, list(df3$platform), FUN = mean)
+```
+
+
