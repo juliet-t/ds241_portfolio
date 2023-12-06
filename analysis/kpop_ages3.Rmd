@@ -1,5 +1,5 @@
 ---
-title: "Has the inital age of people in the Korean Music decrased over time?"
+title: "Has the inital age of people starting their careers in the Korean Music decrased over time?"
 Date: 2023-10-01
 output: html_notebook
 ---
@@ -21,14 +21,7 @@ library(lubridate)
 
 # Import Data 
 
-Since the data set itself was not recorded in the exact way that is necessary for this analysis, some changes to the data set were needed.
 
-Updates to the original data set. 
-* Took out group GIDONDAE because they never became an actual group. 
-* Changed all of KARD's debut date from Sept. 3rd, 2007 to July 29. 2017
-* Change Lee Junyoun from U-Kiss's debut date year from 2008 to July, 2014
-* Changed HOT ISSUES' debut date from May 17, 2017 to April 28th, 2021
-* Deleted Yoon Jia from Midas Company
 
 ```{r}
 thisfile <- here("data", "kpopidolsv3_updated.csv")
@@ -59,7 +52,9 @@ df_ages1 <- df_ages |>
   mutate(debut_age_years = time_length(difftime(debut, date_of_birth), "years")) |>
   mutate(debut_decade = floor(as.numeric(debut-as.Date("2000/01/01"))/365/10)*10)
 ```
+
 # Plot of Debut to Age (in Years)
+
 ```{r}
 ggplot(df_ages1, aes(debut, debut_age_years)) + geom_point(aes(color = debut_age_years))  + labs( x = "Debut (yr)", y =  "Age at Debut (yr)", title = "Debut to Age" )
 ggplot(df_ages1, aes(debut_age_years,group=debut_decade)) +geom_boxplot() + labs( x = "Age at Debut (yr)", y =  "Age at Debut (yr)", title = "Debut to Age" )
@@ -83,6 +78,7 @@ debut2020 <- df_ages1 |>
 
 ```
 
+
 ```{r}
 print("1900:")
 summary(debut1900s$debut_age_years)
@@ -95,7 +91,53 @@ summary(debut2020$debut_age_years)
 
 ```
 
+From the data, it seems like the average age has actually increased. A limitation of this data set is that it is biased towards the mid-2000's to the present. This means that there would have to be more data collected on the K-Pop groups' first musical released from the 1900's to mid-2000s. Another explanation for this data is that, perhaps as time went on, there were more K-Pop idols and K-pop idol groups debuting, and with this increased volumn, there were more idols both much older than usual and much younger than usual. 
 
-* TO-DO
-* Get more data on groups debuted from 1900- 2010.
-* Fix dates of - debut_age_years / really low values
+Since the data set itself was not recorded in the exact way that is necessary for this analysis, some changes to the data set were needed.
+
+# Do Males or Females tend to debut earlier than each other?
+
+```{r}
+df_ages1 |>
+  group_by(gender) |>  
+  summarise(average_age = mean(debut_age_years))
+```
+From this result, it seems like there is little variation between the males and females at the age they debut.
+
+# Which company debuts the oldest idols? Which company debuts the youngest idol? 
+
+First, create the data frame
+
+```{r}
+df_company <- rawdata |>
+ 
+  select(full_name, date_of_birth, group, debut, gender, company) |>
+  mutate(date_of_birth = as.Date(date_of_birth, tryFormats = c("%d/%m/%Y"))) |>
+  mutate(date_of_birth = ymd(date_of_birth))|>
+  mutate(debut = as.Date(debut, tryFormats = c("%d/%m/%Y"))) |>
+  mutate(debut = ymd(debut)) |>
+  drop_na(debut | date_of_birth) |> 
+  subset(debut > date_of_birth) |>
+  mutate(debut_age_years = time_length(difftime(debut, date_of_birth), "years")) |>
+  mutate(debut_decade = floor(as.numeric(debut-as.Date("2000/01/01"))/365/10)*10)
+
+```
+
+Then, 
+```{r}
+df_company |>
+  group_by(company) |>
+  summarise(average_age = mean(debut_age_years)) |>
+  arrange(desc(average_age))
+```
+
+
+Updates to the original data set. 
+* Took out group GIDONDAE because they never became an actual group. 
+* Changed all of KARD's debut date from Sept. 3rd, 2007 to July 29. 2017
+* Change Lee Junyoung from U-Kiss's debut date year from 2008 to July, 2014
+* Changed HOT ISSUES' debut date from May 17, 2017 to April 28th, 2021
+* Deleted Yoon Jia from Midas Company
+* Change TVXQ's debut date
+* Chaged Gate9's debut date
+* Changed Girl's World debute date
