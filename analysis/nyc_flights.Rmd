@@ -1,0 +1,180 @@
+---
+title: "Experiment1: NYC airline data"
+data: 2023-09-06
+output: html_notebook
+---
+
+
+
+Attach libraries
+```{r}
+library(tidyverse)
+library(nycflights13)
+library(here)
+library(janitor)
+library(ggplot2)
+
+```
+
+
+Assign the flights data frame to variable df1
+```{r}
+df1 <- flights 
+df1
+```
+
+
+Flights in September from Miami
+```{r}
+df2 <-df1 |> 
+  filter((month == 9) & (origin == "MIA"))
+df2
+```
+There are no flights from Miami in this dataset. 
+
+Flights in September going to Miami
+```{r}
+df3 <- df1 |>
+  filter(month == 9 & dest == "MIA")
+df3
+```
+There were 912 flights going to Miami from a New York City airport in September 2013.
+
+
+Flights in January going to Miami 
+```{r}
+df4 <- df1 |>
+  filter(month == 1 & dest == "MIA")
+df4
+
+```
+There were 981 flights going to Miami in the month of January. 
+
+ Flights in summer going to Chicago
+
+There are two major airports in Chicago included in this data set as destination airports. Below is the airport name and its IATA code. This information was taken from https://www.cleartrip.com/tourism/airports/chicago-airport.html,
+
+Ohare International Airport: ORD
+
+Chicago Midway International Airport: MDW
+
+We can define "summer as the general months widely associated with summer, which are June, July, and August. 
+
+```{r}
+df5 <- df1 |>
+  filter(((month == 6) | (month == 7) | (month == 8)) & ((dest == "ORD") | (dest =="MDW")))
+df5
+```
+There were 5,770 flights to either Ohare or Midway airports in the summer months of June, July and August. 
+
+We can make our search more specific by defining our range as the first day of summer and the last day of summer, which were June 6th, 2013 and September 21, 2013 respectively. These dates were taken from https://www.calendardate.com/year2013.php. 
+```{r}
+df5a <- df1 |>   
+  filter((time_hour >= "2013-06-21") & (time_hour <= "2013-09-22")) |>
+  filter((dest == "ORD") | (dest == "MDW")) 
+df5
+```
+There were 5,843 flights to either Ohare airport or Midway airport from June 21, 2013 to September 21, 2013.
+
+Task 6: Delays associated with flight number 86
+
+Here we created a new variable "flight_nums" that only includes our target data, which are the flights to Miami in September. We then searched the "flight_nums" variable to find only the unique flight numbers. These unique flight numbers were then stored in the "flight_nums" variable. 
+```{r}
+
+flight_nums <- df1 |> filter((month == 9) & (dest == "MIA"))
+flight_nums <- unique(flight_nums$flight)
+
+```
+
+Then, we created a new variable "df6" which contained only the minimum flight number. In this case, the minimum flight number was 86, which we got using the min() function on the "flight_nums" variable, as well as setting the destination to only planes going to Miami.
+```{r}
+df6 <- df1 |>
+  filter(flight == min(flight_nums), dest == "MIA")
+
+```
+
+
+Finally, we took the data in "df6" and created a visualization of department delays in relationship to arrival delays. 
+```{r}
+  df6 |> 
+  ggplot(aes(x=dep_delay, y=arr_delay), ) + 
+  geom_point() +
+  labs(y = "Arrival delay (min)", x = "Departure delay (min)")
+
+```
+This gives us a scatter plot of flight number 83's departure delays to arrival delays. 
+
+Looking into the documentation of the "nycflights13" package, we can see that negative departure delay values indicate early departures and negative arrival delays indicate early arrivals. This information was taken from https://cran.r-project.org/web/packages/nycflights13/nycflights13.pdf, or it can be viewed in the documentation which can be pulled up in the help window by running the code below and loooking at the dep_delay, arr_delay section. 
+```{r}
+?flights
+```
+
+
+```{r}
+ggplot(df6, aes(x = dep_delay, y=arr_delay)) +
+  geom_point() +
+  geom_smooth(method=lm, se=FALSE) +
+  labs(x = "Departure Delay (min)", y = "Arrival Delay (min)")
+```
+This visualization adds a line of best fit to show that there is a positive correlation between Departure Time
+and Arrival Time. This shows us that generally, the longer the departure time is in minutes, the longer the arrival delay would be. This intuitively makes sense, since if you leave after you plan to, you will arrive later than you plan to, as the travel time of the flight is not effected by the departure time. It does not matter whether you leave at 1:00 pm or 1:40 pm, the duration of the flight will stay relatively consistent no matter what time you depart.   
+
+# Which NYC airport had the most traffic in 2013?
+
+```{r}
+df7 = df1 |>
+  select(origin, dest)|>
+  group_by(origin) |>
+  summarise(n = n())
+```
+
+# Bar Chart of number of flights
+
+```{r}
+df7 |>
+  ggplot(aes(x = origin, y = n)) + geom_col() + labs(x = "Airport", y = "Number of Flights Out", title = "Flights out of NYC Airports in 2013") 
+```
+From this chart, we can see that EWR had the most flights out in 2013. 
+
+# What was the top airline for each NYC airport in 2013?
+
+Filtering for JFK 
+
+```{r}
+df8 = df1 |>
+  select(origin, dest) |>
+  group_by(origin, dest) |>
+  filter(origin == "JFK") |>
+  summarise(n = n())
+
+
+  ggplot(df8, aes(x = dest, y = n) ) + geom_col(aes(fill = origin)) +theme(axis.text.x = element_text(angle = 90, vjust = .1, hjust = 1), axis.text = element_text(size = 6))
+```
+From this graph, we can see LAX was the most popular place for JFK flights. 
+
+Filtering for EWR
+
+```{r}
+df8 = df1 |>
+  select(origin, dest) |>
+  group_by(origin, dest) |>
+  filter(origin == "EWR") |>
+  summarise(n = n())
+
+
+  ggplot(df8, aes(x = dest, y = n) ) + geom_col(aes(fill = origin)) +theme(axis.text.x = element_text(angle = 90, vjust = .1, hjust = 1), axis.text = element_text(size = 6))
+```
+From this graph, we can see ORD was the most popular place for EWR flights. 
+
+```{r}
+df8 = df1 |>
+  select(origin, dest) |>
+  group_by(origin, dest) |>
+  filter(origin == "LGA") |>
+  summarise(n = n())
+
+
+  ggplot(df8, aes(x = dest, y = n) ) + geom_col(aes(fill = origin)) +theme(axis.text.x = element_text(angle = 90, vjust = .1, hjust = 1), axis.text = element_text(size = 6))
+```
+From this graph, we can see ATL was the most popular place for LGA flights. 
+
