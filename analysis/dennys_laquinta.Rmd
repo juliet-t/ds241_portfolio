@@ -1,0 +1,176 @@
+---
+title: "Lab 04 - La Quinta is Spanish for next to Denny's, Pt. 1"
+author: "Juliet Thistleton"
+date: 2023-10-12
+output: html_notebook
+---
+
+### Load packages and data
+
+```{r load-packages, message = FALSE}
+library(tidyverse) 
+library(here)
+library(janitor)
+```
+
+```{r load-data, message = FALSE}
+states <- read_csv(here("data_raw", "states.csv")) |> clean_names()
+dennys <- read_csv(here("data_raw", "dennys.csv")) |> clean_names()
+laquinta <- read_csv(here("data_raw", "laquinta.csv")) |> clean_names()
+```
+
+### Exercise 1
+
+Finding dimensions of the Denny's Data set 
+```{r}
+paste0("Number of Rows: ",nrow(dennys))
+paste0("Number of Columns: ",ncol(dennys))
+paste0("Names of Column: ", colnames(dennys))
+
+```
+Here, we see there are 1643 rows, and 6 columns with the names address, zip, city, longitude, state, and latitude.
+Each row represents a particular Denny's, telling its address, zip code, city and state it is located in, and its longitude and latitude. 
+
+### Exercise 2
+Finding dimensions of the LaQuinta Data set
+```{r}
+paste0("Number of Rows: ",nrow(laquinta))
+paste0("Number of Columns: ",ncol(laquinta))
+paste0("Names of Column: ", colnames(laquinta))
+
+```
+Here, we see there are 909 rows, and 6 columns with the names address, zip, city, longitude, state, and latitude.
+Each row represents a particular LaQuinta, telling its address, zip code, city and state it is located in, and its longitude and latitude. 
+### Exercise 3
+
+In this data set, there are only Denny's within the United States. There are LaQuintas in Canada, Mexico, China, New Zealand, Turkey, United Arab Emirates, Chile, Colombia, and Ecuador. 
+
+### Exercise 4
+
+One way to check if there are any Denny's are LaQuinta's outside of the United States is to filter the State row for NA's or empty space. If there aren't any empty cells or NA's, then that indicates that all of the data in the data set comes from establishments within the US. 
+...
+
+### Exercise 5
+
+Filtering for Denny's outside of the United States 
+```{r}
+dennys |>
+  filter(!(state %in% states$abbreviation))
+```
+Since there is no data in this tibble, there are no Denny's outside of the United States in this data Set. 
+### Exercise 6
+
+Labeling each Denny's in the United States as in the United States
+```{r}
+dennys <- dennys |>
+  mutate(country = "United States")
+```
+
+### Exercise 7
+Filtering for LaQuintas outside of the United States 
+```{r}
+laquinta |>
+  filter(!(state %in% states$abbreviation))
+
+```
+We get 14 locations outside of the United States of America.
+
+### Exercise 8
+
+```{r}
+laquinta <- laquinta |>
+  mutate(country = case_when(
+    state %in% state.abb     ~ "United States",
+    state %in% c("ON", "BC") ~ "Canada",
+    state == "ANT"           ~ "Colombia",
+    state %in% c("AG", "QR", "CH", "NL", "VE", "PU") ~ "Mexico",
+    state == "FM" ~ "Honduras"
+  ))
+```
+
+Filtering for only LaQuintas inside of the United States
+```{r}
+laquinta <- laquinta |>
+  filter(country == "United States")
+```
+
+
+### Exercise 9
+
+Finding which state has the most Denny's.
+```{r}
+dennys |>
+  group_by(state) |>
+  count(state, sort = TRUE)
+```
+From this data, it seems that California has the most Denny's. This is not suprising, as California is home to Los Angeles, San Francisco, and is a prime state for business. The fewest is Deleware. This is unsurprizing, as Deleware is a small state. 
+
+Finding the state that has the most LaQuintas
+```{r}
+laquinta |>
+  group_by(state) |>
+  count(state, sort = TRUE)
+```
+Texas has the most LaQuintas. Texas is a large state, and it does border Mexico, where there are also a lot of LaQuintas. Texas is also a state with many tourists. The state that has the least LaQuintas is Maine. This is unsuprising, as Maine is on the other side of the country than Texas and the south, which seems to be LaQuintas target area of the United States. 
+
+
+### Exercise 10
+
+Joining Denny's table
+```{r}
+dennys |>
+  count(state) |>
+  inner_join(states, by = c("state" = "abbreviation")) |>
+  mutate(per_thousand = (n / area)) 
+```
+From this data, it seems like Oklahoma has the most restaurants per thousand square mile. 
+
+Joining LaQuinta's table
+```{r}
+laquinta |>
+  group_by(state) |>
+  count(state) |>
+  inner_join(states, by = c("state" = "abbreviation")) |>
+    mutate(per_thousand = (n / area)) 
+```
+It looks like Texas has the most LaQuintas per thousand square mile. 
+
+Identifying Denny's and LaQuintas
+```{r}
+dennys <- dennys |>
+  mutate(establishment = "Denny's")
+laquinta <- laquinta |>
+  mutate(establishment = "La Quinta")
+```
+
+Creating a new data frame of both Denny's and LaQuintas
+```{r}
+dn_lq <- bind_rows(dennys, laquinta)
+```
+
+Plotting Denny's to LaQuintas
+```{r}
+ggplot(dn_lq, mapping = aes(x = longitude, y = latitude, color = establishment)) +
+  geom_point(alpha = 100)
+```
+### Exercise 11
+
+Filtering for just North Carolina
+```{r}
+dn_lq |>
+  filter(state == "NC") |>
+  ggplot(mapping = aes(x = longitude, y = latitude, color = establishment)) +
+  geom_point(alpha= 10)
+```
+Mitch Hedberg's joke does not appear to hold here.
+
+
+### Exercise 12
+Filtering for just Texas
+```{r}
+dn_lq |>
+  filter(state == "TX") |>
+  ggplot(mapping = aes(x = longitude, y = latitude, color = establishment)) +
+  geom_point(alpha= 10)
+```
+While there are more Denny's near LaQuintas in Texas, the number of LaQuintas next to Denny's is not significant enough to make such a broad assumption. There are many LaQuintas that are not to Denny's in the U.S.

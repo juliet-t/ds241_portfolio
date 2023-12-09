@@ -179,7 +179,4 @@ dfVideo2 <- df1 |>
 ggplot(dfVideo2, aes(x = fall_enrl, y = spring_132)) + 
   geom_point() + geom_smooth(method = lm, se = FALSE) + labs(title = "MA 132 Spring Enrollment Predicted by MA 131 Fall Enrollment", x = "MA 131 Fall", y = "MA 132 Spring")
 ```
-```{r}
-lm <- lm(dfVideo2, spring132 ~fall_enrl)
-```
-
+This visualization predicts the amount of people in MA 132 in the Spring as a function of the amount of people in MA 132. 
